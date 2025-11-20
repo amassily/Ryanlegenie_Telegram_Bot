@@ -5,7 +5,14 @@ import logging
 # --- CONFIGURATION PRINCIPALE ---
 
 # Jeton d'API de votre bot : @RuanPCS_bot
-TOKEN = '8075235573:AAE7TspWJxkgMCrKWlgHqUSfcWjKN7idrvk'
+import os
+# ... autres imports
+
+# --- CONFIGURATION PRINCIPALE ---
+
+# Le TOKEN est maintenant récupéré depuis la variable d'environnement du serveur
+TOKEN = os.environ.get('BOT_TOKEN') # Doit correspondre à la CLÉ que vous avez définie sur Render (ici 'BOT_TOKEN')
+# ... le reste du code est inchangé
 
 # URL de l'image à afficher à l'accueil
 IMAGE_URL_ACCUEIL = 'https://th.bing.com/th/id/OIP.VIDJY1jRyPxMpe8L1QOJXwHaB6?w=301&h=90&c=7&r=0&o=7&pid=1.7&rm=3' 
