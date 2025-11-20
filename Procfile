@@ -1,0 +1,1 @@
+worker: python ruan_bot.py
