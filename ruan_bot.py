@@ -1,18 +1,22 @@
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.error import BadRequest
 import logging
+import os # ESSENTIEL pour lire la variable d'environnement
 
 # --- CONFIGURATION PRINCIPALE ---
 
-# Jeton d'API de votre bot : @RuanPCS_bot
-import os
-# ... autres imports
+# Le TOKEN est maintenant lu depuis la variable d'environnement du serveur Render.
+# La variable clé est 'BOT_TOKEN', qui contient votre jeton secret.
+TOKEN = os.environ.get('BOT_TOKEN') 
 
-# --- CONFIGURATION PRINCIPALE ---
-
-# Le TOKEN est maintenant récupéré depuis la variable d'environnement du serveur
-TOKEN = os.environ.get('BOT_TOKEN') # Doit correspondre à la CLÉ que vous avez définie sur Render (ici 'BOT_TOKEN')
-# ... le reste du code est inchangé
+# Vérification pour le cas où le TOKEN n'est pas défini (sécurité)
+if not TOKEN:
+    # Optionnel: si vous voulez garder votre jeton pour des tests LOCAUX (sur PC) seulement
+    # Sinon, cette ligne DOIT rester vide ou commentée lors du déploiement sur Render.
+    # TOKEN = '8075235573:AAE7TspWJxkgMCrKWlgHqUSfcWjKN7idrvk' 
+    logging.error("Le jeton d'API n'a pas été trouvé (variable d'environnement BOT_TOKEN manquante).")
+    # Pour le déploiement sur Render, on laisse l'exécution continuer, car Render garantit que la variable existe.
 
 # URL de l'image à afficher à l'accueil
 IMAGE_URL_ACCUEIL = 'https://th.bing.com/th/id/OIP.VIDJY1jRyPxMpe8L1QOJXwHaB6?w=301&h=90&c=7&r=0&o=7&pid=1.7&rm=3' 
@@ -77,50 +81,36 @@ async def button_handler(update, context):
     """Gère le clic sur tous les boutons en ligne."""
     query = update.callback_query
     
+    # Répond immédiatement pour éviter l'erreur "Query is too old"
     await query.answer()
 
     data = query.data
-    
+    message_text = None # Initialisation du message de réponse
+
     # --- GESTION DU BOUTON "DÉMARRER" ---
     if data == 'menu_start':
-        await query.edit_message_text(
-            text="Quel sujet sur La Montante souhaitez-vous consulter ?",
-            reply_markup=await menu_principal_keyboard()
-        )
+        message_text = "Quel sujet sur La Montante souhaitez-vous consulter ?"
     
     # --- GESTION DES BOUTONS DU MENU PRINCIPAL ---
     
-    # Réponse pour "Inscription" (q_inscription)
     elif data == 'q_inscription':
-        inscription_message = (
+        message_text = (
             "📩 **RÉPONSE À LIRE ATTENTIVEMENT** 📩\n\n"
             "Parce que les coupons seront envoyés en code. Si tu n'as pas de compte déjà créé, tu ne pourras pas utiliser le code.\n"
             "Voici le seul site utilisé :\n"
             "🔗 **Lien d'inscription :**\n"
-            f"[1XBET | INSCRIPTION OFFICIELLE](https://affpa.top/L?tag=d_2295205m_97c_&site=2295205&ad=97)"
-        )
-        await query.edit_message_text(
-            text=inscription_message,
-            parse_mode='Markdown',
-            reply_markup=await menu_principal_keyboard()
+            f"[1XBET | INSCRIPTION OFFICIELLE]({LIEN_INSCRIPTION_1XBET})"
         )
     
-    # Réponse pour "Vidéo Explicative" (q_video)
     elif data == 'q_video':
-        video_message = (
+        message_text = (
             "📹 **VOICI LA VIDÉO EXPLICATIVE** 📹\n\n"
             "Regarde-la jusqu'à la fin pour comprendre comment t'inscrire correctement.\n\n"
             "Crée ton compte **1XBET** et monte dans le train avec nous 🚆\n"
             "🔗 **Lien d'inscription :**\n"
-            f"[1XBET | INSCRIPTION OFFICIELLE](https://affpa.top/L?tag=d_2295205m_97c_&site=2295205&ad=97)\n\n"
-        )
-        await query.edit_message_text(
-            text=video_message,
-            parse_mode='Markdown',
-            reply_markup=await menu_principal_keyboard()
+            f"[1XBET | INSCRIPTION OFFICIELLE]({LIEN_INSCRIPTION_1XBET})\n\n"
         )
 
-    # Réponse pour "Coupons / Offres" (q_coupons) - Déjà mis à jour
     elif data == 'q_coupons':
         coupon_message = (
             "🔔 **RÉPONSE À LIRE ATTENTIVEMENT** 🔔\n\n"
@@ -129,54 +119,56 @@ async def button_handler(update, context):
             "\n"
             "💰 **1XBET** 💰\n"
             "➡️ **LIEN POUR T'INSCRIRE :**\n"
-            "[1XBET | INSCRIPTION OFFICIELLE](https://affpa.top/L?tag=d_2295205m_97c_&site=2295205&ad=97)" # J'ai conservé le lien spécifique que vous aviez donné ici
+            f"[1XBET | INSCRIPTION OFFICIELLE]({LIEN_INSCRIPTION_1XBET})"
             "\n"
             "🚨 Je n'enverrai pas les captures dans le canal.\n"
-            "Le code te permet de miser directement ."
+            "Le code te permet de miser directement."
         )
 
-        await query.edit_message_text(
-            text=coupon_message,
-            parse_mode='Markdown',
-            reply_markup=await menu_principal_keyboard()
-        )
-
-    # Réponse pour "Dates du Projet" (q_dates)
     elif data == 'q_dates':
-        dates_message = (
+        message_text = (
             "📩 **RÉPONSE À LIRE ATTENTIVEMENT** 📩\n\n"
             "On démarre tous ensemble dans le canal public le **25 novembre**.\n\n"
             "Assure-toi d'avoir ton compte actif avant le début pour pouvoir utiliser le code des coupons :\n"
             "🔗 **Lien d'inscription :**\n"
-            f"[1XBET | INSCRIPTION OFFICIELLE](https://affpa.top/L?tag=d_2295205m_97c_&site=2295205&ad=97)"
-        )
-        await query.edit_message_text(
-            text=dates_message,
-            parse_mode='Markdown',
-            reply_markup=await menu_principal_keyboard()
+            f"[1XBET | INSCRIPTION OFFICIELLE]({LIEN_INSCRIPTION_1XBET})"
         )
 
-    # Réponse pour "Suivi du Projet" (q_suivi)
     elif data == 'q_suivi':
-        suivi_message = (
+        message_text = (
             "📩 **RÉPONSE À LIRE ATTENTIVEMENT** 📩\n\n"
             "Assure-toi d'avoir ton compte **1XBET** actif sur le site.\n\n"
             "Les coupons seront envoyés en code, tu pourras les utiliser directement via ce lien d'inscription juste en-dessous.\n"
             "🔗 **Lien d'inscription :**\n"
-            f"[1XBET | INSCRIPTION OFFICIELLE](https://affpa.top/L?tag=d_2295205m_97c_&site=2295205&ad=97)"
-        )
-        await query.edit_message_text(
-            text=suivi_message,
-            parse_mode='Markdown',
-            reply_markup=await menu_principal_keyboard()
+            f"[1XBET | INSCRIPTION OFFICIELLE]({LIEN_INSCRIPTION_1XBET})"
         )
 
-    # Gestion de la réponse par défaut
+    # --- ÉDITION DU MESSAGE ET GESTION DES ERREURS ---
+    if message_text:
+        try:
+            await query.edit_message_text(
+                text=message_text,
+                parse_mode='Markdown',
+                reply_markup=await menu_principal_keyboard()
+            )
+        except BadRequest as e:
+            # Gère l'erreur "Message is not modified" (clic répété sur le même bouton)
+            if "Message is not modified" in e.message:
+                logger.info("Message non modifié, ignorer l'erreur.")
+                pass
+            else:
+                logger.error(f"Erreur BadRequest non gérée: {e}")
+                raise # Renvoyer les autres erreurs (plus sérieuses)
+
     else:
-        await query.edit_message_text(
-            text=f"Désolé, information non reconnue. Veuillez choisir parmi les options du menu.",
-            reply_markup=await menu_principal_keyboard()
-        )
+        # Gestion de la réponse par défaut si la donnée n'est pas reconnue
+        try:
+            await query.edit_message_text(
+                text=f"Désolé, information non reconnue. Veuillez choisir parmi les options du menu.",
+                reply_markup=await menu_principal_keyboard()
+            )
+        except BadRequest:
+             pass # Si le message par défaut ne peut pas être édité, on ignore.
 
 
 async def hello(update, context):
@@ -185,7 +177,9 @@ async def hello(update, context):
 
 async def echo(update, context):
     """Gère les messages texte qui ne sont pas des commandes (fonctionnalité d'écho)."""
-    await update.message.reply_text(f"Vous avez dit : {update.message.text}")
+    # Si le message vient du canal, on n'y répond pas, sinon le bot boucle.
+    if update.message.chat.type == 'private':
+        await update.message.reply_text(f"Vous avez dit : {update.message.text}")
 
 
 # --- FONCTION PRINCIPALE DE DÉMARRAGE DU BOT ---
@@ -193,6 +187,10 @@ async def echo(update, context):
 def main():
     """Démarre le bot et configure ses gestionnaires."""
     
+    if not TOKEN:
+        logger.error("DÉMARRAGE ÉCHOUÉ : Le jeton d'API est manquant.")
+        return
+
     application = Application.builder().token(TOKEN).build()
 
     # Ajout des gestionnaires de commandes standard
